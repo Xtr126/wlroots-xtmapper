@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -30,6 +31,8 @@
 #include "tablet-v2-client-protocol.h"
 #include "relative-pointer-unstable-v1-client-protocol.h"
 #include "viewporter-client-protocol.h"
+#include "pointer-constraints-unstable-v1-client-protocol.h"
+#include "util/env.h"
 
 struct wlr_wl_linux_dmabuf_feedback_v1 {
 	struct wlr_wl_backend *backend;
@@ -348,6 +351,45 @@ static const struct wl_shm_listener shm_listener = {
 	.format = shm_handle_format,
 };
 
+static void output_handle_mode(void *data, struct wl_output *wl_output,
+		uint32_t flags, int32_t width, int32_t height, int32_t refresh) {
+	struct wlr_wl_backend *wl = data;
+	if (!(flags & WL_OUTPUT_MODE_CURRENT)) {
+		return;
+	}
+
+	if (getenv("XTMAPPER_PRINT_OUTPUT_INFO") != NULL) {
+		fprintf(stderr, "Output mode: %dx%d at %d mHz (%.1f Hz)\n",
+			width, height, refresh, refresh / 1000.0);
+	}
+
+	if (getenv("XTMAPPER_WIDTH") == NULL &&
+		getenv("XTMAPPER_HEIGHT") == NULL) {
+		wl->width = width;
+		wl->height = height;
+	}
+}
+
+static void output_handle_geometry(void *data, struct wl_output *wl_output,
+		int32_t x, int32_t y, int32_t physical_width,
+		int32_t physical_height, int32_t subpixel,
+		const char *make, const char *model, int32_t transform) {
+}
+
+static void output_handle_done(void *data, struct wl_output *wl_output) {
+}
+
+static void output_handle_scale(void *data, struct wl_output *wl_output,
+		int32_t scale) {
+}
+
+static const struct wl_output_listener output_listener = {
+	.geometry = output_handle_geometry,
+	.mode = output_handle_mode,
+	.done = output_handle_done,
+	.scale = output_handle_scale,
+};
+
 static void registry_global(void *data, struct wl_registry *registry,
 		uint32_t name, const char *iface, uint32_t version) {
 	struct wlr_wl_backend *wl = data;
@@ -375,7 +417,7 @@ static void registry_global(void *data, struct wl_registry *registry,
 			&xdg_wm_base_interface, 1);
 		xdg_wm_base_add_listener(wl->xdg_wm_base, &xdg_wm_base_listener, NULL);
 	} else if (strcmp(iface, zxdg_decoration_manager_v1_interface.name) == 0) {
-		wl->zxdg_decoration_manager_v1 = wl_registry_bind(registry, name,
+		if (!env_parse_bool("WLR_NO_DECORATION")) wl->zxdg_decoration_manager_v1 = wl_registry_bind(registry, name,
 			&zxdg_decoration_manager_v1_interface, 1);
 	} else if (strcmp(iface, zwp_pointer_gestures_v1_interface.name) == 0) {
 		wl->zwp_pointer_gestures_v1 = wl_registry_bind(registry, name,
@@ -416,6 +458,15 @@ static void registry_global(void *data, struct wl_registry *registry,
 	} else if (strcmp(iface, wp_viewporter_interface.name) == 0) {
 		wl->viewporter = wl_registry_bind(registry, name,
 			&wp_viewporter_interface, 1);
+	} else if (strcmp(iface, wl_output_interface.name) == 0) {
+		struct wl_output *output = wl_registry_bind(registry, name,
+			&wl_output_interface, version >= 3 ? 3 : version);
+		if (output != NULL) {
+			wl_output_add_listener(output, &output_listener, wl);
+		}
+	} else if (strcmp(iface, zwp_pointer_constraints_v1_interface.name) == 0) {
+		wl->pointer_constraints = wl_registry_bind(registry, name,
+			&zwp_pointer_constraints_v1_interface, 1);
 	} else if (strcmp(iface, wp_linux_drm_syncobj_manager_v1_interface.name) == 0) {
 		wl->drm_syncobj_manager_v1 = wl_registry_bind(registry, name,
 			&wp_linux_drm_syncobj_manager_v1_interface, 1);
@@ -553,6 +604,9 @@ static void backend_destroy(struct wlr_backend *backend) {
 	if (wl->viewporter) {
 		wp_viewporter_destroy(wl->viewporter);
 	}
+	if (wl->pointer_constraints) {
+		zwp_pointer_constraints_v1_destroy(wl->pointer_constraints);
+	}
 	free(wl->drm_render_name);
 	free(wl->activation_token);
 	xdg_wm_base_destroy(wl->xdg_wm_base);
@@ -597,6 +651,8 @@ struct wlr_backend *wlr_wl_backend_create(struct wl_event_loop *loop,
 	}
 
 	wlr_backend_init(&wl->backend, &backend_impl);
+	wl->width = 1280;
+	wl->height = 720;
 
 	wl->event_loop = loop;
 	wl_list_init(&wl->outputs);

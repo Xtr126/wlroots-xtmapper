@@ -53,7 +53,10 @@ struct wlr_wl_backend {
 	struct xdg_activation_v1 *activation_v1;
 	struct wl_subcompositor *subcompositor;
 	struct wp_viewporter *viewporter;
+	struct zwp_pointer_constraints_v1 *pointer_constraints;
 	char *drm_render_name;
+	int32_t width;
+	int32_t height;
 };
 
 struct wlr_wl_buffer {
@@ -147,6 +150,7 @@ struct wlr_wl_pointer {
 	struct wl_listener output_destroy;
 
 	struct wl_list link;
+	struct zwp_confined_pointer_v1 *confined_pointer;
 };
 
 struct wlr_wl_touch_points {

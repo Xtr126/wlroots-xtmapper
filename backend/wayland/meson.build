@@ -17,6 +17,7 @@ client_protos = [
 	'linux-drm-syncobj-v1',
 	'pointer-gestures-unstable-v1',
 	'presentation-time',
+	'pointer-constraints-unstable-v1',
 	'relative-pointer-unstable-v1',
 	'tablet-v2',
 	'viewporter',
