@@ -302,7 +302,7 @@ static void output_apply_state(struct wlr_output *output,
 			output->width = width;
 			output->height = height;
 
-			output->refresh = refresh;
+			if (refresh > 0) output->refresh = refresh;
 
 			if (output->swapchain != NULL &&
 					(output->swapchain->width != output->width ||
