@@ -51,6 +51,8 @@ struct wlr_wl_backend {
 	struct wp_viewporter *viewporter;
 	struct zwp_pointer_constraints_v1 *pointer_constraints;
 	char *drm_render_name;
+	int32_t width;
+	int32_t height;
 };
 
 struct wlr_wl_buffer {

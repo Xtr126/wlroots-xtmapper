@@ -868,7 +868,7 @@ static struct wlr_wl_output *output_create(struct wlr_wl_backend *backend,
 
 	struct wlr_output_state state;
 	wlr_output_state_init(&state);
-	wlr_output_state_set_custom_mode(&state, 1280, 720, 0);
+	wlr_output_state_set_custom_mode(&state, backend->width, backend->height, 0);
 
 	wlr_output_init(wlr_output, &backend->backend, &output_impl,
 		backend->event_loop, &state);
