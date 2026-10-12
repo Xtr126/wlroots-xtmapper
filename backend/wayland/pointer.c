@@ -8,6 +8,7 @@
 
 #include "pointer-gestures-unstable-v1-client-protocol.h"
 #include "relative-pointer-unstable-v1-client-protocol.h"
+#include "pointer-constraints-unstable-v1-client-protocol.h"
 
 static struct wlr_wl_pointer *output_get_pointer(struct wlr_wl_output *output,
 		const struct wl_pointer *wl_pointer) {
@@ -55,6 +56,7 @@ static void pointer_handle_enter(void *data, struct wl_pointer *wl_pointer,
 	output->enter_serial = serial;
 	output->cursor.pointer = pointer;
 	update_wl_output_cursor(output);
+	output->cursor.pointer->confined_pointer = zwp_pointer_constraints_v1_confine_pointer(output->backend->pointer_constraints, output->surface, seat->wl_pointer, NULL, ZWP_POINTER_CONSTRAINTS_V1_LIFETIME_PERSISTENT);
 }
 
 static void pointer_handle_leave(void *data, struct wl_pointer *wl_pointer,
@@ -78,6 +80,7 @@ static void pointer_handle_leave(void *data, struct wl_pointer *wl_pointer,
 		output->enter_serial = 0;
 		output->cursor.pointer = NULL;
 	}
+	zwp_confined_pointer_v1_destroy(output->cursor.pointer->confined_pointer);
 }
 
 static void pointer_handle_motion(void *data, struct wl_pointer *wl_pointer,

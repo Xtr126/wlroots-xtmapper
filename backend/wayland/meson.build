@@ -18,6 +18,7 @@ client_protos = [
 	'pointer-gestures-unstable-v1',
 	'presentation-time',
 	'relative-pointer-unstable-v1',
+	'pointer-constraints-unstable-v1',
 	'tablet-v2',
 	'viewporter',
 	'xdg-activation-v1',

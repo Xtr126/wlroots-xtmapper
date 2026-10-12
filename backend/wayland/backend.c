@@ -29,6 +29,7 @@
 #include "tablet-v2-client-protocol.h"
 #include "relative-pointer-unstable-v1-client-protocol.h"
 #include "viewporter-client-protocol.h"
+#include "pointer-constraints-unstable-v1-client-protocol.h"
 
 struct wlr_wl_linux_dmabuf_feedback_v1 {
 	struct wlr_wl_backend *backend;
@@ -411,6 +412,9 @@ static void registry_global(void *data, struct wl_registry *registry,
 	} else if (strcmp(iface, wp_viewporter_interface.name) == 0) {
 		wl->viewporter = wl_registry_bind(registry, name,
 			&wp_viewporter_interface, 1);
+	} else if (strcmp(iface, zwp_pointer_constraints_v1_interface.name) == 0) {
+        wl->pointer_constraints = (struct zwp_pointer_constraints_v1 *)wl_registry_bind(
+                registry, name, &zwp_pointer_constraints_v1_interface, 1);
 	}
 }
 
