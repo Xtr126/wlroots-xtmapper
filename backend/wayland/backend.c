@@ -615,6 +615,9 @@ static void backend_destroy(struct wlr_backend *backend) {
 	if (wl->viewporter) {
 		wp_viewporter_destroy(wl->viewporter);
 	}
+	if (wl->pointer_constraints) {
+		zwp_pointer_constraints_v1_destroy(wl->pointer_constraints);
+	}
 	free(wl->drm_render_name);
 	free(wl->activation_token);
 	xdg_wm_base_destroy(wl->xdg_wm_base);
